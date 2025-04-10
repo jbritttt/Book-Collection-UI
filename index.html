@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Book Collection</title>
+  <!-- Load Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind Configuration for Custom Colors -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1F2937',    // Dark gray for header/footer
+            secondary: '#F3F4F6',  // Light gray for section background
+            accent: '#3B82F6',     // Blue for buttons
+            accentHover: '#1D4ED8',// Darker blue for hover
+            success: '#10B981',    // Green for updates
+            successHover: '#059669',// Darker green for hover
+            danger: '#EF4444',     // Red for delete/logout
+            dangerHover: '#DC2626',// Darker red for hover
+            neutral: '#6B7280',    // Gray for cancel
+            textPrimary: '#FFFFFF',// White text
+            textSecondary: '#000000',// Black text
+            borderLight: '#E5E7EB',// Light gray border
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Custom CSS for responsive table and fixes -->
+  <style>
+    @media (max-width: 640px) {
+      #book-table, #book-table thead, #book-table tbody, #book-table th, #book-table td, #book-table tr {
+        display: block;
+      }
+      #book-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+      #book-table tr {
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+      }
+      #book-table td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+      }
+      #book-table td:before {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        content: attr(data-label);
+        font-weight: bold;
+      }
+      /* Fix for "No books added" message alignment on mobile */
+      .no-books-message {
+        text-align: left !important;
+        padding: 0 !important;
+        display: block;
+      }
+      #book-table td.no-books-message {
+        padding-left: 0 !important;
+        text-align: left !important;
+      }
+      /* Fix for buttons in "Actions" cell */
+      #book-table td[data-label="Actions"] {
+        display: flex;
+        justify-content: center;
+        padding-left: 0;
+      }
+    }
+  </style>
+  <!-- Load Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body class="flex flex-col min-h-screen">
+  <!-- Header Section -->
+  <header class="bg-primary p-4 text-textPrimary flex justify-between items-center sticky top-0">
+    <!-- Site Title -->
+    <h1 class="text-xl sm:text-xlg font-semibold tracking-tight">Personal Book Collection</h1>
+    <div class="flex items-center space-x-4">
+      <!-- Welcome Message (hidden on mobile) -->
+      <p class="hidden md:block">Welcome, John Doe</p>
+      
+      <!-- Trending Books Icon with Dropdown -->
+      <div class="relative" id="trending-wrapper">
+        <button id="trending-btn" class="relative text-textPrimary text-sm focus:outline-none">
+          <i class="fas fa-book-open cursor-pointer fa-lg"></i>
+          <!-- Notification dot -->
+          <span id="trend-dot" class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-success ring-2 ring-textPrimary"></span>
+        </button>
+        <!-- Trending Books Dropdown -->
+        <div id="trending-dropdown" class="hidden absolute right-0 mt-5 sm:mt-6 w-64 bg-white text-textSecondary rounded shadow-lg border border-borderLight z-50 p-4">
+          <h3 class="text-sm font-semibold mb-2 text-success">Trending Books</h3>
+          <ul class="text-sm space-y-1">
+            <li>📖 The Midnight Library</li>
+            <li>📖 Atomic Habits</li>
+            <li>📖 The Alchemist</li>
+            <li>📖 Project Hail Mary</li>
+            <li>📖 Where the Crawdads Sing</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- User Icon (visible on small screens and up) -->
+      <a href="#" class="hidden sm:block">
+        <i class="fas fa-user mr-1 text-gray-300 fa-sm ml-1"></i>
+      </a>
+  
+      <!-- Menu Button and Dropdown -->
+      <div class="relative inline-block text-left">
+        <button id="menu-btn" class="mr-2">Menu</button>
+        <div id="dropdown" class="hidden absolute right-0 mt-5 sm:mt-6 w-48 bg-white text-textSecondary rounded shadow-lg border border-borderLight z-50">
+          <!-- Profile Item -->
+          <a href="#" class="flex items-center px-4 py-2 hover:bg-gray-200">
+            Profile
+            <i class="fas fa-user mr-2 text-gray-500 fa-sm ml-auto"></i>
+          </a>
+          <!-- Favorites Item -->
+          <a href="#" class="block px-4 py-2 hover:bg-gray-200">Favorites</a>
+      
+          <!-- Settings with Submenu -->
+          <div class="group relative">
+            <a href="#" class="block px-4 py-2 hover:bg-gray-200">Settings</a>
+            <div class="absolute top-0 right-full mt-0 w-40 bg-white text-textSecondary border border-borderLight shadow-lg rounded hidden group-hover:block z-50">
+              <a href="#" class="block px-4 py-2 hover:bg-gray-200">Account</a>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-200">General</a>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-200">Privacy</a>
+            </div>
+          </div>
+      
+          <!-- Upgrades with Submenu -->
+          <div class="group relative">
+            <a href="#" class="block px-4 py-2 hover:bg-gray-200">Upgrades</a>
+            <div class="absolute top-0 right-full mt-0 w-40 bg-white text-textSecondary border border-borderLight shadow-lg rounded hidden group-hover:block z-50">
+              <a href="#" class="flex items-center justify-between px-4 py-2 hover:bg-gray-200">
+                Basic
+                <span class="ml-2 h-2 w-2 rounded-full bg-success"></span>
+              </a>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-200">Pro</a>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-200">Enterprise</a>
+            </div>
+          </div>
+      
+          <!-- Help Item -->
+          <a href="#" class="block px-4 py-2 hover:bg-gray-200">Help</a>
+          <!-- Logout Item (mobile only) -->
+          <a href="#" class="block px-4 py-2 hover:bg-gray-200 md:hidden">Logout</a>
+        </div>
+      </div>
+      
+      <!-- Logout Button (desktop only) -->
+      <button id="logout-btn" class="hidden md:block bg-danger text-textPrimary px-4 py-2 rounded hover:bg-dangerHover">Logout</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 w-full p-4 md:max-w-[1220px] md:mx-auto mt-6">
+    <!-- Add New Book Section -->
+    <section class="bg-secondary p-4 mb-4">
+      <h2 class="text-xl mb-4">Add New Book</h2>
+      <form id="add-book-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="title" class="block">Title</label>
+          <input type="text" id="title" class="w-full border p-2" required>
+        </div>
+        <div>
+          <label for="author" class="block">Author</label>
+          <input type="text" id="author" class="w-full border p-2" required>
+        </div>
+        <div>
+          <label for="genre" class="block">Genre</label>
+          <input type="text" id="genre" class="w-full border p-2" required>
+        </div>
+        <div>
+          <label for="total-pages" class="block">Total Pages</label>
+          <input type="number" id="total-pages" min="0" class="w-full border p-2" required>
+        </div>
+        <div>
+          <label for="current-page" class="block">Current Page</label>
+          <input type="number" id="current-page" min="0" class="w-full border p-2" required>
+        </div>
+        <div>
+          <button type="submit" id="add-book-btn" class="bg-accent hover:bg-accentHover text-textPrimary rounded-md min-w-[100px] min-h-[40px] flex justify-center items-center">Add Book</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Book Collection Section -->
+    <section>
+      <h2 class="text-xl mb-4">Book Collection</h2>
+      <input type="text" id="search" placeholder="Search by title or author" class="w-full border p-2 mb-4">
+      <table id="book-table" class="w-full border-collapse border">
+        <thead>
+          <tr>
+            <th class="border p-2">Current</th>
+            <th class="border p-2">Title</th>
+            <th class="border p-2">Author</th>
+            <th class="border p-2">Genre</th>
+            <th class="border p-2">Progress</th>
+            <th class="border p-2">Current Page</th>
+            <th class="border p-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="book-list"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Modal for Notifications -->
+  <div id="modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
+    <div id="modal-content" class="bg-white p-4 rounded"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-primary text-textPrimary p-4 text-center">
+    <p>© 2023 Personal Book Collection</p>
+  </footer>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // Initialize book data
+    let books = [];
+    let displayedBooks = [];
+    let currentSearch = '';
+    let nextId = 1;
+
+    // Render books to the table
+    function renderBooks(books) {
+      const bookList = document.getElementById('book-list');
+      bookList.innerHTML = '';
+      if (!books.length && !currentSearch) {
+        bookList.innerHTML = '<tr><td colspan="7" class="no-books-message p-4">No books added. Please add a new book.</td></tr>';
+        return;
+      } else if (!books.length && currentSearch) {
+        bookList.innerHTML = '<tr><td colspan="7" class="text-center p-4">No books match the search.</td></tr>';
+        return;
+      }
+      books.forEach(book => {
+        const progress = book.totalPages > 0 ? Math.round((book.currentPage / book.totalPages) * 100) : 0;
+        const row = `
+          <tr>
+            <td data-label="Current" class="border p-2 flex justify-center items-center">
+              <span data-id="${book.id}" class="star-btn ${book.isCurrent ? 'text-yellow-500' : 'text-gray-500'} text-2xl cursor-pointer">★</span>
+            </td>
+            <td data-label="Title" class="border p-2"><input type="text" value="${book.title}" id="title-${book.id}" class="w-full border p-1"></td>
+            <td data-label="Author" class="border p-2"><input type="text" value="${book.author}" id="author-${book.id}" class="w-full border p-1"></td>
+            <td data-label="Genre" class="border p-2"><input type="text" value="${book.genre}" id="genre-${book.id}" class="w-full border p-1"></td>
+            <td data-label="Progress" class="border p-2">${book.currentPage} / ${book.totalPages} (${progress}%)</td>
+            <td data-label="Current Page" class="border p-2">
+              <input type="number" value="${book.currentPage}" id="current-page-${book.id}" min="0" max="${book.totalPages}" class="w-20 border p-1">
+            </td>
+            <td data-label="Actions" class="border p-2 flex space-x-[5px] justify-center">
+              <button data-id="${book.id}" class="bg-success hover:bg-successHover text-textPrimary rounded-md w-[70px] h-[28px] text-sm flex justify-center items-center update-btn">Update</button>
+              <button data-id="${book.id}" class="bg-danger hover:bg-dangerHover text-textPrimary rounded-md w-[70px] h-[28px] text-sm flex justify-center items-center delete-btn">Delete</button>
+            </td>
+          </tr>
+        `;
+        bookList.innerHTML += row;
+      });
+    }
+
+    // Filter books based on search input
+    function applyFilter() {
+      if (currentSearch) {
+        displayedBooks = books.filter(book =>
+          book.title.toLowerCase().includes(currentSearch.toLowerCase()) ||
+          book.author.toLowerCase().includes(currentSearch.toLowerCase())
+        );
+      } else {
+        displayedBooks = books;
+      }
+      renderBooks(displayedBooks);
+    }
+
+    // Show modal for various actions
+    function showModal(type, book = {}) {
+      const modal = document.getElementById('modal');
+      const content = document.getElementById('modal-content');
+      if (type === 'congrats') {
+        content.innerHTML = `
+          <p>Congratulations! You have finished reading ${book.title} by ${book.author}. Total pages: ${book.totalPages}</p>
+          <button id="close-modal" class="bg-accent text-textPrimary p-2 mt-4">Close</button>
+        `;
+      } else if (type === 'delete') {
+        content.innerHTML = `
+          <p>Are you sure you want to delete ${book.title}?</p>
+          <button id="confirm-delete" class="bg-danger text-textPrimary p-2 mt-4 mr-2">Confirm</button>
+          <button id="cancel-delete" class="bg-neutral text-textPrimary p-2 mt-4">Cancel</button>
+        `;
+        document.getElementById('confirm-delete').addEventListener('click', () => {
+          books = books.filter(b => b.id !== book.id);
+          applyFilter();
+          modal.classList.add('hidden');
+        });
+        document.getElementById('cancel-delete').addEventListener('click', () => {
+          modal.classList.add('hidden');
+        });
+      } else if (type === 'added') {
+        content.innerHTML = `
+          <p>Book added successfully</p>
+          <button id="close-modal" class="bg-accent text-textPrimary p-2 mt-4">Close</button>
+        `;
+      }
+      document.getElementById('close-modal')?.addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+      modal.classList.remove('hidden');
+    }
+
+    // Add book form submission
+    document.getElementById('add-book-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('add-book-btn');
+      btn.innerHTML = '<span class="animate-spin inline-block h-5 w-5 border-t-2 border-textPrimary rounded-full"></span>';
+      btn.disabled = true;
+      setTimeout(() => {
+        const title = document.getElementById('title').value;
+        const author = document.getElementById('author').value;
+        const genre = document.getElementById('genre').value;
+        const totalPages = parseInt(document.getElementById('total-pages').value);
+        const currentPage = parseInt(document.getElementById('current-page').value);
+        if (currentPage > totalPages) {
+          alert('Current page cannot be greater than total pages');
+          btn.innerHTML = 'Add Book';
+          btn.disabled = false;
+          return;
+        }
+        const book = { id: nextId++, title, author, genre, totalPages, currentPage, isCurrent: false };
+        books.push(book);
+        applyFilter();
+        e.target.reset();
+        if (book.currentPage === book.totalPages) {
+          showModal('congrats', book);
+        } else {
+          showModal('added');
+        }
+        btn.innerHTML = 'Add Book';
+        btn.disabled = false;
+      }, 3000);
+    });
+
+    // Search input handler
+    document.getElementById('search').addEventListener('input', (e) => {
+      currentSearch = e.target.value;
+      applyFilter();
+    });
+
+    // Book list click handlers (star, update, delete)
+    document.getElementById('book-list').addEventListener('click', (e) => {
+      const id = parseInt(e.target.dataset.id);
+      const book = books.find(b => b.id === id);
+      if (!book) return;
+
+      if (e.target.classList.contains('star-btn')) {
+        // Mark book as current
+        books.forEach(b => b.isCurrent = false);
+        book.isCurrent = true;
+        applyFilter();
+      } else if (e.target.classList.contains('update-btn')) {
+        const btn = e.target;
+        // Get updated values from inputs
+        const newTitle = document.getElementById(`title-${id}`).value;
+        const newAuthor = document.getElementById(`author-${id}`).value;
+        const newGenre = document.getElementById(`genre-${id}`).value;
+        const newCurrentPageStr = document.getElementById(`current-page-${id}`).value;
+        const parsedCurrentPage = parseInt(newCurrentPageStr);
+        
+        // Validate current page
+        const isCurrentPageValid = !isNaN(parsedCurrentPage) && parsedCurrentPage >= 0 && parsedCurrentPage <= book.totalPages;
+        const isChanged = newTitle !== book.title || newAuthor !== book.author || newGenre !== book.genre || (isCurrentPageValid && parsedCurrentPage !== book.currentPage);
+        
+        if (!isChanged) return; // No changes, exit
+        if (!isCurrentPageValid) {
+          alert('Invalid current page');
+          return;
+        }
+        
+        // Show loading spinner with adjusted size
+        btn.innerHTML = '<span class="animate-spin h-5 w-5 border-t-2 border-textPrimary rounded-full mt-2"></span>';
+        btn.disabled = true;
+        
+        // Simulate async update with timeout
+        setTimeout(() => {
+          const wasCompleted = book.currentPage === book.totalPages;
+          book.title = newTitle;
+          book.author = newAuthor;
+          book.genre = newGenre;
+          book.currentPage = parsedCurrentPage;
+          applyFilter();
+          
+          // Show congrats modal if book is newly completed
+          if (!wasCompleted && book.currentPage === book.totalPages) {
+            showModal('congrats', book);
+          }
+          btn.innerHTML = 'Update';
+          btn.disabled = false;
+        }, 3000);
+      } else if (e.target.classList.contains('delete-btn')) {
+        // Show delete confirmation modal
+        showModal('delete', book);
+      }
+    });
+
+    // Function to close all dropdowns
+    function closeAllDropdowns() {
+      document.getElementById('dropdown').classList.add('hidden');
+      document.getElementById('trending-dropdown').classList.add('hidden');
+    }
+
+    // Menu dropdown toggle
+    const menuBtn = document.getElementById('menu-btn');
+    const dropdown = document.getElementById('dropdown');
+    menuBtn.addEventListener('click', () => {
+      closeAllDropdowns();
+      dropdown.classList.toggle('hidden');
+    });
+
+    // Trending books dropdown toggle
+    const trendingBtn = document.getElementById('trending-btn');
+    const trendingDropdown = document.getElementById('trending-dropdown');
+    const trendDot = document.getElementById('trend-dot');
+    const trendingWrapper = document.getElementById('trending-wrapper');
+    trendingBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllDropdowns();
+      trendingDropdown.classList.toggle('hidden');
+      if (!trendingDropdown.classList.contains('hidden')) {
+        trendDot?.classList.add('hidden');
+      }
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+      if (!trendingWrapper.contains(e.target)) {
+        trendingDropdown.classList.add('hidden');
+      }
+    });
+
+    // Initial render
+    renderBooks([]);
+  </script>
+</body>
+</html>
