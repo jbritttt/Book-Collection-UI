@@ -385,9 +385,9 @@
         }
         
         // Show loading spinner with adjusted size
-        btn.innerHTML = '<span class="animate-spin h-5 w-5 border-t-2 border-textPrimary rounded-full mt-2"></span>';
+        btn.innerHTML = '<span class="animate-spin inline-block h-5 w-5 border-t-2 border-textPrimary rounded-full"></span>';
         btn.disabled = true;
-        
+       
         // Simulate async update with timeout
         setTimeout(() => {
           const wasCompleted = book.currentPage === book.totalPages;
